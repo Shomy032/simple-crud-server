@@ -1,0 +1,23 @@
+{
+  "name": "server-test-db",
+  "version": "1.0.0",
+  "description": "testing server and mongo",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "author": "milos",
+  "license": "MIT",
+  "dependencies": {
+    "@hapi/joi": "^17.1.1",
+    "dotenv": "^9.0.2",
+    "express": "^4.17.1",
+    "mongodb": "^3.6.7",
+    "mongoose": "^5.12.10",
+    "monk": "^7.3.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
