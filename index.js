@@ -1,21 +1,27 @@
 const express = require('express');
 const app = express();
+app.use(express.json())
 // 
 require('dotenv').config()
-//
- app.use(express.json())
+
+// enable  cors requests from liveserver on 5500
+const cors = require('cors')
+app.use(cors({
+  origin : "http://127.0.0.1:5500" , 
+  optionsSuccessStatus: 200
+}))
 //
 const monk = require('monk');
 const db = monk(process.env.DB_URI)
 // const all = db.get('characters')
 //
 const Joi = require('@hapi/joi')
-const schema = Joi.object({
-  name : Joi.string().trim().required() ,
-  nickname : Joi.string().trim() ,
-})
+ const  schema =  Joi.object({
+   name : Joi.string().trim().required() ,
+   nickname : Joi.string().trim() ,
+ })
 
-app.listen(process.env.PORT , () => console.log('i am here'))
+ app.listen(process.env.PORT , () => console.log('i am here'))
 
 // READ ALL
 app.get( '/' , async (req , res , next) => {
@@ -55,7 +61,7 @@ app.get( '/:id' , async (req , res , next) => {
 app.post( '/:id' , async (req , res , next) => {
   try{
      
-    const value = await schema.validateAsync(req.body)
+     const value = await schema.validateAsync(req.body) 
     const added = await db.get('characters').insert({
       name : value.name , _id :  req.params.id 
     })
@@ -122,16 +128,38 @@ app.delete( '/:id' , async (req , res , next) => {
     next(err)
   }
  
-
-
 })
 
 
+// const db = monk(process.env.DB_URI)
+const schema2 = Joi.object({
+  username : Joi.string().trim().required() ,
+  password : Joi.string().trim().required()
+})
 
 
+// need to add second route
+app.post('/users/login' , async (req , res , next) => {
+   try {
+    const value2 = await schema2.validateAsync(req.body)
+     
 
-
-
+   let data = await db.get('users').findOne({username : value2.username});
+   console.log(data)
+    if (data && data.username == value2.username) { // check if username is available
+      res.status(400).json({message : `${value2.username} is in use , pls select another name`})
+      return
+     }  
+     let user = await db.get('users').insert({
+      username : value2.username , password : value2.password
+     });
+   
+   res.json({message : "you posted successfully" , you : user})
+   } catch(err) {
+   next(err)
+   
+   }
+})
 
 
 
@@ -154,5 +182,7 @@ app.delete( '/:id' , async (req , res , next) => {
 // db.on('error', err => {
 //   console.error('connection error:', err)
 // })
+
+
 
 
