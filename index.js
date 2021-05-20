@@ -1,13 +1,14 @@
 const express = require('express');
 const app = express();
 app.use(express.json())
+//
+const bcrypt = require('bcrypt');
 // 
 require('dotenv').config()
-
 // enable  cors requests from liveserver on 5500
 const cors = require('cors')
 app.use(cors({
-  origin : "http://127.0.0.1:5500" , 
+  origin : process.env.ORIGIN , 
   optionsSuccessStatus: 200
 }))
 //
@@ -15,174 +16,167 @@ const monk = require('monk');
 const db = monk(process.env.DB_URI)
 // const all = db.get('characters')
 //
+app.listen(process.env.PORT , () => console.log('i am here'))
+//
+
+// here handle all api calls
+const API = require('./routes/api_router')
+app.use('/api/v1' , API)
+//
+var morgan = require('morgan')
+app.use(morgan('tiny'))
+//
 const Joi = require('@hapi/joi')
- const  schema =  Joi.object({
-   name : Joi.string().trim().required() ,
-   nickname : Joi.string().trim() ,
- })
-
- app.listen(process.env.PORT , () => console.log('i am here'))
-
-// READ ALL
-app.get( '/' , async (req , res , next) => {
-  try {
-    const items = await db.get('characters').find({});
-
-    res.status(200)
-    .json(items);
-
-  } catch (err) {
-     next(err)
-     console.log(err)
-  }
-    
-})
-// READ ONE
-app.get( '/:id' , async (req , res , next) => {
-  try {
-    const { id } =  req.params ;
-    const item = await db.get('characters')
-    .findOne({ _id : id });
-   console.log('works' , item)
-
-      if(!item)  return res.status(404)
-      .json({message : "item not found"})
-    
-    res.status(200).json(item)
-  } catch(err) {
-    res.status(400)
-    next(err)
-  }
-
-
-})
-
-// CREATE ONE
-app.post( '/:id' , async (req , res , next) => {
-  try{
-     
-     const value = await schema.validateAsync(req.body) 
-    const added = await db.get('characters').insert({
-      name : value.name , _id :  req.params.id 
-    })
-    res.status(200)
-    .json({ message : "you added your name successfully" , added })
-
-  } catch (err){
-    res.status(400)
-    next(err)
-  }
-    
-})
-// UPDATE ONE
-app.put( '/:id' , async (req , res , next) => {
-  
-  try{
-    
-   const value = await schema.validateAsync(req.body)
-   const item = await db.get('characters').findOne({
-     _id :  req.params.id 
-   })
-  
-   if (!item) return next()
-  
-   await db.get('characters').update({
-  _id : req.params.id  ,
-} ,
- { $set : value }
-)
-
-   res.status(200)
-   .json({ message : "you updated your name successfully"  , "old" : item.name   ,
-    "new" : value.name })
-
- } catch (err){
-   res.status(400)
-   next(err)
- }
-
-
-})
-
-// DELETE ONE
-app.delete( '/:id' , async (req , res , next) => {
-  
-  try{
-    const { id } = req.params ;
-    const item = await db.get('characters').findOne({
-      _id :  req.params.id 
-    })
-    if (!item) {
-  res.status(404).send("404 item not found")
-    } 
-
-  const deleted =  await  db.get('characters').remove({
-      _id :  id
-    })
-
-
-    res.status(200).json({
-      'message' : "you have deleted succesfully"
-    })
-  } catch {
-    next(err)
-  }
- 
-})
-
-
-// const db = monk(process.env.DB_URI)
 const schema2 = Joi.object({
   username : Joi.string().trim().required() ,
   password : Joi.string().trim().required()
 })
+// const value = await <schema-name>.validateAsync(req.body)
 
 
 // need to add second route
-app.post('/users/login' , async (req , res , next) => {
-   try {
-    const value2 = await schema2.validateAsync(req.body)
-     
-
-   let data = await db.get('users').findOne({username : value2.username});
-   console.log(data)
-    if (data && data.username == value2.username) { // check if username is available
-      res.status(400).json({message : `${value2.username} is in use , pls select another name`})
-      return
-     }  
-     let user = await db.get('users').insert({
-      username : value2.username , password : value2.password
-     });
+app.post('/login' , async (req , res ) => {
    
-   res.json({message : "you posted successfully" , you : user})
+  
+  try {
+     await schema2.validateAsync(req.body)
+    console.log(value2)
+
+   let data = await db.get('users').findOne({username : value2.username , password : value2.password});
+   console.log(data)
+    if (data) { // check if user exist and check password
+      res.status(200).redirect('/api/v1')
+      return
+     }  else{
+       res.status(401).redirect('/login')
+       
+     }
+   
    } catch(err) {
-   next(err)
+     res.send(err)
    
    }
 })
 
+let path = require('path');
+const { match } = require('assert');
+
+app.get('/login' , (req , res , next) => {
+  // we need to check if he is alrady loged , if he is redirect
+  res.sendFile(path.join(__dirname, './web', 'login.html'));
+})
+
+app.get('/' , (req , res , next) => {
+  res.sendFile(path.join(__dirname, './web', 'login.html'));
+})
+
+//this make "web" folder awailabe
+app.use(express.static('web'));
 
 
+let plain1 ="poterhari" ;
+let plain2 ="haripoter" ;
 
 
+async function name (pass){
 
+  let hash1 ;
+  let hash2 ;
+try {
+  await bcrypt.hash(pass, 14).then(async (hash) => {
+    let match = await bcrypt.compare(x , hash);
+    console.log(x)
+    console.log(match)
+    console.log( hash)
+    hash1 = hash ;
+  }) 
+// $2b$14$lIL.63TXT15BNYbUCEgb1uIcvQxGIkWTvEg.Dr0f98Wtv4eKZlrpC
 
+ await bcrypt.hash(x, 14).then((hash) => {
+  console.log( hash)
+  hash2 = hash ;
+}) 
+let c = 'poterhari'
+let match = await  bcrypt.compare("haripoter" , hash1 );
+console.log(match)
+ if (!match) {
+ console.log("you can not pass")
+ } else{
+   console.log("go in please")
+ }
 
-// const mongoose = require('mongoose');
-// const url = 'mongodb://127.0.0.1:27017/test-data-base' ;
-// // connect to mongoDB
-// mongoose.connect(url, { useNewUrlParser: true , useUnifiedTopology: true });
+} catch(err) {
+console.log(err)
+} 
 
+}
+//test call
+    //  name(plain1 )
 
-// const db = mongoose.connection
-// db.once('open', _ => {
-//   console.log('Database connected:', url)
-// })
+//
 
-// db.on('error', err => {
-//   console.error('connection error:', err)
-// })
+//
+const Ajv = require("ajv");
+const addFormats = require("ajv-formats");
 
+const ajv = new Ajv()
+addFormats(ajv)
 
+const schema = {
+  type: "object",
+  properties: {
+    username: {type: "string" ,  "minLength" : 5 },
+    password: {type: "string" , "minLength" : 8},
+    email : {type : "string" , format: "email"}
+  },
 
+    required: ["username"],
+  required: ["password"],
+  additionalProperties: false
+   
+}
+const validate = ajv.compile(schema)
+//
+
+app.post('/register' , async (req , res , next) => {
+
+  try {
+  
+    const valid = await validate(req.body)
+    if(!valid) {
+      res.status(400)
+       throw new Error('username must be over 5 characters , password must be over 8 caracters , and mail must be valid')
+    } 
+    
+    const { username  , email } = req.body //deconstructuring
+    let { password } = req.body 
+    const checkMail = await db.get('schema-test').findOne({ email})
+   //  console.log(checkMail)
+   if(checkMail) {
+    res.status(400) 
+    throw new Error('that mail is in use , pls select another one')
+  }
+  const checkUsername = await db.get('schema-test').findOne({ username})
+  // console.log(checkUsername)
+  if(checkUsername) {
+  res.status(400) 
+  throw new Error('that usernmae is in use , pls select another one')
+ }  
+console.log("starting hashing");
+ hash = await bcrypt.hash(password , 14);
+ console.log("hashing is over" , hash);
+    const userNew = await db.get('schema-test').insert({username  , password : hash , email })
+        
+    // cant send json and redirect ??
+      res.status(200).json({
+        message: "you have successfully creacted account , with username" + " " + userNew.username
+      })  
+     // res.redirect("/login")
+
+  } catch(err) {
+    res.status(400)
+  next(err)
+  }
+  
+})
 

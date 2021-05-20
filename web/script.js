@@ -10,7 +10,7 @@ form.addEventListener('submit' ,  (e) => {
   let pass = password.value;
 
   try {
-    fetch('http://127.0.0.1:3737/users/login' , {
+    fetch('http://127.0.0.1:3737/login' , {
          method: 'POST',
          headers: {
         'Accept': 'application/json',
@@ -21,15 +21,13 @@ form.addEventListener('submit' ,  (e) => {
            password : pass
          })
        })
-      .then(res => res.json())
-      .then(data => console.log(data))
+      //  .then(res => res.json())
+      //  .then(data => console.log(data))
   
   } catch(err) {
   console.log(err)
   }
-
-      
-
+   
 
 })
 
@@ -42,3 +40,4 @@ form.addEventListener('submit' ,  (e) => {
 //   },
 //   body: JSON.stringify({a: 1, b: 'Textual content'})
 // });
+
