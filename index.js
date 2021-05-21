@@ -68,7 +68,7 @@ const { match } = require('assert');
 
 app.get('/login' , (req , res , next) => {
   // we need to check if he is alrady loged , if he is redirect
-  res.sendFile(path.join(__dirname, './web', 'login.html'));
+ // res.sendFile(path.join(__dirname, './web', 'login.html'));
 })
 
 app.get('/' , (req , res , next) => {
@@ -77,46 +77,6 @@ app.get('/' , (req , res , next) => {
 
 //this make "web" folder awailabe
 app.use(express.static('web'));
-
-
-let plain1 ="poterhari" ;
-let plain2 ="haripoter" ;
-
-
-async function name (pass){
-
-  let hash1 ;
-  let hash2 ;
-try {
-  await bcrypt.hash(pass, 14).then(async (hash) => {
-    let match = await bcrypt.compare(x , hash);
-    console.log(x)
-    console.log(match)
-    console.log( hash)
-    hash1 = hash ;
-  }) 
-// $2b$14$lIL.63TXT15BNYbUCEgb1uIcvQxGIkWTvEg.Dr0f98Wtv4eKZlrpC
-
- await bcrypt.hash(x, 14).then((hash) => {
-  console.log( hash)
-  hash2 = hash ;
-}) 
-let c = 'poterhari'
-let match = await  bcrypt.compare("haripoter" , hash1 );
-console.log(match)
- if (!match) {
- console.log("you can not pass")
- } else{
-   console.log("go in please")
- }
-
-} catch(err) {
-console.log(err)
-} 
-
-}
-//test call
-    //  name(plain1 )
 
 
 
