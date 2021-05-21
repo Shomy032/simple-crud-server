@@ -10,10 +10,10 @@ const ajv = new Ajv()
 addFormats(ajv)
 // 
 require('dotenv').config()
-// enable  cors requests from liveserver on 5500
+// enable  cors requests from liveserver on 3000 (react app)
 const cors = require('cors')
 app.use(cors({
-  origin : process.env.ORIGIN , 
+  origin : process.env.ORIGIN , //"http://127.0.0.1:3000/"
   optionsSuccessStatus: 200
 }))
 //
