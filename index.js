@@ -3,6 +3,11 @@ const app = express();
 app.use(express.json())
 //
 const bcrypt = require('bcrypt');
+//
+const Ajv = require("ajv");
+const addFormats = require("ajv-formats");
+const ajv = new Ajv()
+addFormats(ajv)
 // 
 require('dotenv').config()
 // enable  cors requests from liveserver on 5500
@@ -67,7 +72,7 @@ app.get('/login' , (req , res , next) => {
 })
 
 app.get('/' , (req , res , next) => {
-  res.sendFile(path.join(__dirname, './web', 'login.html'));
+  // res.sendFile(path.join(__dirname, './web', 'login.html')); => just test thing
 })
 
 //this make "web" folder awailabe
@@ -113,16 +118,11 @@ console.log(err)
 //test call
     //  name(plain1 )
 
-//
+
+
 
 //
-const Ajv = require("ajv");
-const addFormats = require("ajv-formats");
-
-const ajv = new Ajv()
-addFormats(ajv)
-
-const schema = {
+const schemaRegister = {
   type: "object",
   properties: {
     username: {type: "string" ,  "minLength" : 5 },
@@ -132,14 +132,15 @@ const schema = {
 
     required: ["username"],
   required: ["password"],
+  required: ["email"],
   additionalProperties: false
    
 }
-const validate = ajv.compile(schema)
+const validate = ajv.compile(schemaRegister)
 //
 
 app.post('/register' , async (req , res , next) => {
-
+// TODO : add repeat password function
   try {
   
     const valid = await validate(req.body)
@@ -162,21 +163,89 @@ app.post('/register' , async (req , res , next) => {
   res.status(400) 
   throw new Error('that usernmae is in use , pls select another one')
  }  
-console.log("starting hashing");
+// console.log("starting hashing");
  hash = await bcrypt.hash(password , 14);
- console.log("hashing is over" , hash);
-    const userNew = await db.get('schema-test').insert({username  , password : hash , email })
+ const userNew = await db.get('schema-test').insert({username  , password : hash , email })
         
     // cant send json and redirect ??
       res.status(200).json({
-        message: "you have successfully creacted account , with username" + " " + userNew.username
+        message: "you have successfully creacted account , with username" ,
+        successs : true ,
+         username : userNew.username ,
+         email : userNew.email
       })  
      // res.redirect("/login")
 
   } catch(err) {
-    res.status(400)
-  next(err)
+    res.status(400).json({
+      message : err.message ,
+      success : false
+    })
   }
   
 })
 
+
+
+
+// login schema
+const schemaLogin = {
+  type: "object",
+  properties: {
+    username: {type: "string" ,  "minLength" : 5 },
+    password: {type: "string" , "minLength" : 8}
+  },
+
+    required: ["username"],
+  required: ["password"],
+  additionalProperties: false
+   
+}
+const validateLogin = ajv.compile(schemaLogin)
+// test route for login
+app.post('/login-test' , async (req , res , next) => {
+
+  try {
+   const valid = await validateLogin(req.body)
+   if(!valid) {
+     res.status(400) 
+    throw new Error("invalid request , please reformat and try again later") 
+   }
+   const {username , password} = req.body
+   const checkName = await db.get('schema-test').findOne({ username })
+   console.log(checkName);
+   if(!checkName) {
+    throw new Error("There is no user with that name") 
+   }
+  //  console.log(password , checkName.password)
+   const match = await  bcrypt.compare(password , checkName.password);
+   console.log(match)
+
+
+if(!match) {
+  throw new Error("Invalid username and password") 
+}
+res.status(200).json({
+  message : "username and password are correct" ,
+   succes : true
+})
+
+  } catch(err) {
+    res.status(401).json({
+      message : err.message ,
+      success : false 
+    })
+  }
+
+})
+
+
+// debugger for hash  
+// async function debug(password , hash) {
+//   console.log(x , "x")
+//   console.log(y , "y");
+//   const match = await  bcrypt.compare(x , y);
+// console.log(match);
+//   return match
+// }
+//  debug("password" , "hash");
